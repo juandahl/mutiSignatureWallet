@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import "./ownable.sol";
 
@@ -12,6 +12,9 @@ contract MultiSignatureWallet is Ownable {
   address[] signersWhitelist;
   uint minSignatures;
   ERC20 public token;
+  // percentage of total transfered
+  uint fee;
+
 
   struct RequireTransfer {
     address[] signs;
@@ -63,7 +66,8 @@ contract MultiSignatureWallet is Ownable {
     }
   }
   function transferTokens(address to, uint amount) private {
-    require(token.balanceOf(address(this)) >= amount, "balance does not enough to transfer");
+    uint total = amount + amount * fee;
+    require(token.balanceOf(address(this)) >= total, "balance does not enough to transfer");
 
     token.transfer(to, amount);
   }
@@ -91,4 +95,11 @@ contract MultiSignatureWallet is Ownable {
 
     emit ApproveTransferTokens(msg.sender, current.to, current.amount, pos);
   }
+
+  function withdraw() external onlyOwner {
+    uint balance = address(this).balance;
+    require(balance > 0, "No balance to withdraw");
+
+    payable(owner).transfer(balance);
+}
 }
